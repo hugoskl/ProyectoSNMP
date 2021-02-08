@@ -1,26 +1,19 @@
 package jsnmpm.terminal;
 
-import java.awt.Point;
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.Console;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
-import java.util.List;
-import java.util.function.Predicate;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.fusesource.jansi.Ansi;
-import org.fusesource.jansi.Ansi.Erase;
 import org.fusesource.jansi.AnsiConsole;
 
-/**
- * 
- * @author MrStonedDog
- *
- */
+import jsnmpm.terminal.Terminal.Prompt;
+
 public class Terminal {
+
 	
 	public static enum Prompt{
 		NORMAL, SHELL
@@ -37,17 +30,18 @@ public class Terminal {
 	// ### MOUSE POSITIONING ####
 	// ·· PROMPTS
 	// SHELL
-	String shellPrompt = "jsnmp> ";
+	public String shellPrompt = "jsnmp> ";
 	public final int startShellPromptRow = 30;
-	public final int shellpromptCol = 0;
-	public int currentShellPromptRow = startShellPromptRow;
-	public int currentShellPromptCol = shellpromptCol;
+	public final int startShellPromptCol = 0;
+	
 	// OPTION
-	String optionPrompt = "Option: ";
-	public final int startOptionPromptRow = 25;
-	public final int startOptionPromptCol = getBannerStartCol();
-	public int currentOptionPrompRow = startOptionPromptRow;
-	public int currentOptionPrompCol = startOptionPromptCol;
+	public String optionPrompt = "Option: ";
+	public final int startOptionPromptRow = 20;
+	public final int startOptionPromptCol = this.getMenuStartCol();
+	
+	// PROMPT ROW/COL
+	public int currentPromptRow = startOptionPromptRow;
+	public int currentPromptCol = startOptionPromptRow;
 	
 	
 	// ·· INFO
@@ -64,40 +58,42 @@ public class Terminal {
 	public Ansi ansiMenuHeader = Ansi.ansi().bgRed().fgDefault();
 	public Ansi ansiBanner = Ansi.ansi().fgBrightRed();
 	
-	public Ansi ansiInfo = Ansi.ansi().fgBrightRed();
+	public Ansi ansiInfo = Ansi.ansi().fgRed();
 	public Ansi ansiInfo2 = Ansi.ansi().fgBrightBlue();
 	public Ansi ansiDefault = Ansi.ansi().bgDefault().fgDefault();
+	public Ansi ansiGood = Ansi.ansi().bgDefault().fgBrightGreen();
 	public Ansi ansiError = Ansi.ansi().fgBrightMagenta();
 	public Ansi ansiWarning = Ansi.ansi().fgYellow();
+	public Ansi ansiNewLine = Ansi.ansi().a(ansiDefault).a("\n");
 
 	
 	// ######### 	CONSTRUCTOR 	###########
+	/**
+	 * This class implements all methods needed to print and read from the Terminal that is being used.
+	 * 
+	 * @throws IOException
+	 */
 	public Terminal() throws IOException {
 		AnsiConsole.systemInstall();
 		this.br = new BufferedReader(new InputStreamReader(System.in));
 		this.os = this.getOS();
-		//Ansi.ansi().cursor(0, 0);
+
 	}
 	
+	// ##################    GETTERS // SETTERS    #####################
+	public int getTerminalWidth() {
+		return this.terminalWidth;
+	}
 	// ##################### 		TERMINAL I/O 		#########################
 	
-	public synchronized String readInput() {
-		
-		try {
-			cout((this.currentStatus == Prompt.NORMAL) 
-					? Ansi.ansi().a(this.ansiPrompt).a(this.optionPrompt).a(this.ansiUserinput)
-					: Ansi.ansi().a(this.ansiPrompt).a(this.shellPrompt).a(this.ansiUserinput));
-			String input = br.readLine();
-			return input;
-		} catch (IOException e) {
-			return null;
-		}
-	}
+	/**
+	 * Reads input from System.in . The given input must be of @class Ansi.
+	 * @param text
+	 * @return
+	 */
 	public String readInput(Ansi text) {
 		try {
-			cout((this.currentStatus == Prompt.NORMAL) 
-					? Ansi.ansi().a(text).a(this.ansiUserinput)
-					: Ansi.ansi().a(text).a(this.ansiUserinput));
+			System.out.print(Ansi.ansi().cursor(this.currentPromptRow++, this.currentPromptCol).a(text).a(this.ansiUserinput));
 			String input = br.readLine();
 			return input;
 		} catch (IOException e) {
@@ -105,8 +101,13 @@ public class Terminal {
 		}
 	}
 	
-	
-	public void write(Ansi ansi, String text) {
+	/**
+	 * Prints the given text with given Ansi configuration. After every letter @function Thread.sleep(millis)
+	 * is called with millis = 3.
+	 * @param ansi
+	 * @param text
+	 */
+	private void write(Ansi ansi, String text) {
 		for(int i = 0; i<text.length(); i++) {
 			System.out.print(Ansi.ansi().a(ansi).a(text.charAt(i)));
 			try {
@@ -120,38 +121,86 @@ public class Terminal {
 	 * Used only for printing text with cursor positioning already specified.
 	 * @param text
 	 */
-	private void print(Ansi text) {
+	public void print(Ansi text) {
 		System.out.print(text);
 	}
 	
-	public synchronized void cout(Ansi text) {
+	/**
+	 * Used for printing text to System.out . The text must be of type @class Ansi.
+	 * This method print a new line character at the end
+	 * !! If you wanna print a text in more than one line you should call this function for every line.
+	 * @param text
+	 */
+	public void cout(Ansi text) {
 		
-		System.out.print((this.currentStatus == Prompt.NORMAL) 
-				? Ansi.ansi().cursor(this.currentOptionPrompRow++,this.currentOptionPrompCol).a(text).a(this.ansiUserinput)
-				: Ansi.ansi().cursor(this.currentShellPromptRow++,this.currentShellPromptCol).a(text).a(this.ansiUserinput));
+		System.out.print(Ansi.ansi().cursor(this.currentPromptRow++, this.currentPromptCol).a(text).a(this.ansiNewLine));
+
 	}
 	
-	
-	public void cout(Ansi text, int row, int col) {
-		System.out.print(Ansi.ansi().a(text).cursor(row, col));
-	}
-	
+	/**
+	 * Prints out the given error text with the configuration of @param ansiError.
+	 * Print a new line at the end. Uses function "cout"
+	 * @param err
+	 */
 	public void coutError(String err) {
-		cout(Ansi.ansi().a(this.ansiError).a(err+"\n"));
+		this.cout(Ansi.ansi().a(this.ansiError).a(err));
 	}
 	
+	/**
+	 * Prints out the given warning text with the configuration of @param ansiWarning.
+	 * Prints a new line at the end.  Uses function "cout"o
+	 * @param warning
+	 */
 	public void coutWarning(String warning) {
-		cout(Ansi.ansi().a(this.ansiWarning).a(warning+"\n"));
+		this.cout(Ansi.ansi().a(this.ansiWarning).a(warning));
+	}
+	
+	public void coutNewLine() {
+		this.cout(Ansi.ansi());
 	}
 	
 	// ##################### 		SYSTEM DATA 		#################
 	
+	/** Tries to find out the operating system the program is running on. */
 	private String getOS() {
 		return System.getProperty("os.name");
 	}
 	
 	// ##################### 		TERMINAL CONFIGURATION 		#####################
+	/**
+	 * Puts the cursor on the specified (row,column) in terminal. If the desired row or column is bigger
+	 * than the maxRow / maxColumn visible in the prompt this method wont work. See @method jumpLines() for more help.
+	 * @param row
+	 * @param col
+	 */
+	public void setCursor(int row, int col) {
+		print(Ansi.ansi().cursor(row, col));
+	}
 	
+	public void jumpLines(int lines) {
+		for(int i = 0; i < lines; i++)
+			this.coutNewLine();
+	}
+	
+	/**
+	 * Sets initial cursor positiong depending on the Prompt status. By default if status == Prompt.NORMAL
+	 * cursor will be placed at (currentOptionRow, currentOptionCol) -> (25, @return getBannerStartCol()) and if status == Prompt.SHELL it will
+	 * be placed at (currentShellRow, currentShellCol) -> (30,0)
+	 */
+	public void setInitialCursor() {
+		if(this.currentStatus == Prompt.NORMAL) {
+			this.currentPromptRow = this.startOptionPromptRow;
+			this.currentPromptCol = this.startOptionPromptCol;
+		}else {
+			this.currentPromptRow = this.startShellPromptRow;
+			this.currentPromptCol = this.startShellPromptCol;
+		}
+	}
+	
+	/**
+	 * Clears the terminal. It creates a process and inhertis current IO to execute the proper command
+	 * for each OS. -> Windows: "cmd /c cls" </br> Linux: "clear"
+	 */
 	public void clearTerminal() {
 		if(this.os.split(" ")[0].equals("Windows")) {
 			try {
@@ -159,84 +208,98 @@ public class Terminal {
 			} catch (InterruptedException | IOException e) {
 				coutError("Error: Cannot reset Window...");
 			}
-		}
-	}
-	
-	public void reset(String[] info) {
-		this.clearTerminal();
-		this.setUpStartHeader(info);
-	}
-	
-	
-	public void changePrompt() {
-		this.currentStatus = ((this.currentStatus == Prompt.NORMAL) ? Prompt.SHELL : Prompt.NORMAL);
-	}
-	
-	public void deleteLine() {
-		System.out.println(Ansi.ansi().cursor(--this.currentOptionPrompRow, --this.currentOptionPrompCol).eraseLine());
-	}
-	
-	/** BROKEN, DONT USE */
-	private void findNewTerminalWidth() {
-		
-		if(this.os.split(" ")[0].equals("Windows")) {
+		}else { // PROBABLY A LINUX SYSTEM
 			try {
-				ProcessBuilder pb = new ProcessBuilder("cmd", "/c", "mode|find","\"Col\"");
-				Process pr = pb.inheritIO().start();
-				BufferedReader br2 = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-				String result = br2.readLine();
-				result = Arrays.asList(result.split(" ")).stream().collect(Collectors.filtering(str -> !str.isEmpty(),
-					Collectors.toList())).get(1);
-				this.br = br2;
-				pr.waitFor();
-				this.terminalWidth = Integer.parseInt(result);
-				
-			} catch (IOException e) {
-				this.coutError("Error: I/O for obtaining terminal with is broken");
-			} catch (InterruptedException e) {
-				this.coutError("Error: Proccess interrupted while getting terminal width");
+				new ProcessBuilder("clear").inheritIO().start().waitFor();
+			} catch (InterruptedException | IOException e) {
+				coutError("Error: Cannot reset Window...");
 			}
 		}
 	}
 	
+	/**
+	 * Resets the terminal to its default state. Depending on the terminal status
+	 * the prompt location may differ. 
+	 * @param info
+	 */
+	public void reset(Map<String, String> ctrlInfo) {
+		this.clearTerminal();
+		//this.deleteLastLines(this.currentPromptRow);
+		this.setUpStartHeader(ctrlInfo);
+	}
+	
+	/**
+	 * Changes between the two possible Prompt (Prompt.NORMAL -> "Option:" | Prompt.SHELL -> "jsnmp>")
+	 */
+	public void changePrompt() {
+		if(this.currentStatus == Prompt.NORMAL) {
+			this.currentStatus = Prompt.SHELL;
+			this.currentPromptRow = this.startShellPromptRow;
+			this.currentPromptCol = this.startShellPromptCol;
+		}else {
+			this.currentStatus = Prompt.NORMAL;
+			this.currentPromptRow = this.startOptionPromptRow;
+			this.currentPromptCol = this.getMenuStartCol();
+		}
+	}
+	
+	/** Deletes the last line.(Not the current) */
+	public void deleteLastLine() {
+		System.out.println(Ansi.ansi().cursor(--this.currentPromptRow, --this.currentPromptCol).eraseLine());
+	}
+	
+	/** Deletes the n last lines. Calls @method deleteLastLine() for every line.*/
+	public void deleteLastLines(int lines) {
+		for(int i = 0;i<lines;i++) {
+			this.deleteLastLine();
+		}
+	}
+	
 	/** Resize all graphics to given width. Does not resize terminal window.*/
-	public void resize(int columns, String[] status) throws IOException {
+	public void resize(int columns, Map<String, String> ctrlInfo) throws IOException {
 		
 		this.terminalWidth = columns;
 		this.clearTerminal();
-		this.setUpStartHeader(status);
+		this.setUpStartHeader(ctrlInfo);
 	}
 	
 	// #######################      TERMINAL INTERFACE     #############################
 	
 	// ···· POSITIONING
-	private int getBannerStartCol() {
-		//coutError(""+Math.round(this.terminalWidth-this.BANNER_WIDTH)/2);
+	public int getBannerStartCol() {
 		return Math.round(this.terminalWidth-this.BANNER_WIDTH)/2;
 	}
 	
-	private int getMenuStartCol() {
+	public int getMenuStartCol() {
 		return getBannerStartCol();
 	}
 	
 	// ···· PRINTING
-	public  void setUpStartHeader(String[] info) {
-		printBanner();
-		printMainInfo(info);
-		printMainMenu();
+	/** Sets the header. The header is made of a banner, the main info line and the menu "boxes".
+	 * The @param info is the information to be displayed.
+	 * @param info
+	 */
+	public  void setUpStartHeader(Map<String, String> ctrlInfo) {
+		this.printBanner();
+		this.printMainInfo(ctrlInfo);
+		this.printMainMenu();
+		this.setInitialCursor();
 	
 		
 	}
+	/** Prints the configured banner in custom/random mode"*/
 	public void printBanner() {
-		print(Ansi.ansi().a(this.ansiBanner).a(TUtil.createCustomBanner(TUtil.getRandomBanner(), getBannerStartCol(), TUtil.getRandomEncode(), TUtil.getRandomDispay())).a("\n\n"));
+		print(Ansi.ansi().a(this.ansiBanner).a(TUtil.createCustomBanner(TUtil.getRandomBanner(), this.getBannerStartCol(), TUtil.getRandomEncode(), TUtil.getRandomDispay())).a("\n\n"));
 	}
 	
+	/** Prints the configured banner in custom/random mode" but calls @method write from this class. See "write" method 4 more info.*/
 	public void writeBanner() {
-		write(this.ansiBanner,TUtil.createCustomBanner(TUtil.getRandomBanner(), getBannerStartCol(), TUtil.getRandomEncode(), TUtil.getRandomDispay()));
+		write(this.ansiBanner,TUtil.createCustomBanner(TUtil.getRandomBanner(), this.getBannerStartCol(), TUtil.getRandomEncode(), TUtil.getRandomDispay()));
 	}
-
+	
+	/** Prints the main menu. */ // TODO MAY BE DONE MORE EFFICIENtLY???
 	public void printMainMenu() {
-		int col = getMenuStartCol()-5;
+		int col = getMenuStartCol()-7;
 		int row = this.menuRow;
 		for(String header : TUtil.MENU_OP_HEADERS) {
 			print(Ansi.ansi().cursor(row++,col).a(this.ansiMenuHeader).bold().a(header).boldOff());
@@ -250,14 +313,20 @@ public class Terminal {
 		}
 	}
 	
-	public void printMainInfo(String[] info) {
+	/** Prints the main info. */
+	public void printMainInfo(Map<String, String> ctrlInfo) {
 		int i = 0;
-		print(Ansi.ansi().cursor(this.infoRow, getMenuStartCol()+10));
-		for(String option : TUtil.MANAGER_INFO) {
-			print(this.ansiInfo);
-			print(Ansi.ansi().a(option).a(this.ansiDefault).a(info[i]).a("   "));
-			i++;
+		Ansi info = Ansi.ansi();
+		String strInfo = null;
+		for(String entry : ctrlInfo.keySet()) {
+			strInfo += entry + ctrlInfo.get(entry) + "   ";
+			info.a(this.ansiInfo + entry + this.ansiDefault + ctrlInfo.get(entry) + "   ");
 		}
+
+		print(Ansi.ansi().cursor(this.infoRow, 2+(this.terminalWidth - (strInfo.length() - "   ".length()))/2));
+		print(Ansi.ansi().a(info).a(this.ansiDefault));
+		
+
 	}
-	
+
 }

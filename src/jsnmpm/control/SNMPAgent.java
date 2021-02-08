@@ -24,7 +24,7 @@ import jsnmpm.control.utilities.JSNMPUtil;
  * @author MrStonedDog
  *
  */
-public class SNMPAgent implements ResponseListener{
+public class SNMPAgent{
 	
 	// ## STATIC ##
 	public static final boolean UNREACHABLE = false;
@@ -49,7 +49,8 @@ public class SNMPAgent implements ResponseListener{
 		this.ip = InetAddress.getByName(ip);
 		this.pduList = new HashMap<OID,PDU>();
 		this.name = ((name == null) ? "Unknown" : name);
-		this.target = JSNMPUtil.createCommunityTarget(String.format("%s/%d", ip, port), new OctetString(readCommunity));
+		this.readCommunity = new OctetString(readCommunity);
+		this.target = JSNMPUtil.createCommunityTarget(String.format("%s/%d", ip, port),this.readCommunity);
 		this.target.setVersion(SnmpConstants.version2c);
 		this.state = this.isReachable();
 		
@@ -105,13 +106,6 @@ public class SNMPAgent implements ResponseListener{
 	}
 	// ################################## PUBLIC METHODS #######################################
 	
-	// ·· Handling implemented ResponseListener
-	@Override
-	public <A extends Address> void onResponse(ResponseEvent<A> event) {
-		((Snmp)event.getSource()).cancel(event.getRequest(), this);
-		this.insertData(event.getResponse());
-		//System.out.printf("Agent: %s | OID: %s -> Data: %s", this.ip, event.getResponse().getVariableBindings());
-	}
 	// ·················· HELPFUL METHODS
 		
 	public boolean isReachable() {
@@ -183,6 +177,10 @@ public class SNMPAgent implements ResponseListener{
 	
 	public CommunityTarget<Address> getCommunityTarget() {
 		return this.target;
+	}
+	
+	protected SNMPAgent getMyself() {
+		return this;
 	}
 	
 

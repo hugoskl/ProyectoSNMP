@@ -96,7 +96,7 @@ public class JSNMPUtil {
 			}
 		}else if(oids.length > 1) {
 			try {
-				return new PDU(PDU.GETNEXT, Arrays.asList(oids).stream().map(OID::new).map(VariableBinding::new).collect(Collectors.toList()));
+				return new PDU(PDU.GET, Arrays.asList(oids).stream().map(OID::new).map(VariableBinding::new).collect(Collectors.toList()));
 			}catch(Exception e) {
 				return null;
 			}
@@ -128,7 +128,8 @@ public class JSNMPUtil {
 			}
 		}else if(oids.length > 1) {
 			try {
-				return new PDU(PDU.GETNEXT, Arrays.asList(oids).stream().map(OID::new).map(VariableBinding::new).collect(Collectors.toList()));
+				return new PDU(PDU.GET, Arrays.asList(oids).stream().map(OID::new).map(VariableBinding::new)
+						.collect(Collectors.toList()));
 			}catch(Exception e) {
 				return null;
 			}
@@ -142,10 +143,16 @@ public class JSNMPUtil {
 	 * @param response
 	 * @return
 	 */
-	public static String getSimplifiedResponse(ResponseEvent<Address> response) { //TODO MAKE BETTER
-		
-		return (response.getResponse() == null) ? null : response.getResponse().toString();
+	public static List<String[]> getSimplifiedUniqueResponse(ResponseEvent<Address> response) { //TODO MAKE BETTER
+		List<String[]> ans = new ArrayList<String[]>();
+		for(VariableBinding var : response.getResponse().getVariableBindings())
+			ans.add((response.getResponse() == null) ? null : new String[] {
+					response.getPeerAddress().toString(),
+					var.getOid().toDottedString(),
+					var.getVariable().toString()});
+		return ans;
 	}
+	
 	
 	
 	// ############ METHODS FOR COMMUNITY_TARGETS  ##################

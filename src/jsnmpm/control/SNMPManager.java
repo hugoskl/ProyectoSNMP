@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.snmp4j.Snmp;
 import org.snmp4j.TransportMapping;
@@ -16,7 +19,7 @@ import org.snmp4j.smi.GenericAddress;
 import jsnmpm.control.utilities.JSNMPUtil;
 
 /**
- * 
+ * @SNMPVersion SNMPv2c
  * @author MrStonedDog
  *
  */
@@ -28,15 +31,14 @@ public class SNMPManager{
 	private Map<Integer, SNMPAgent> agentsMap = null;
 	private InetAddress ip = null;
 	private int port = 161;
-	private int id_counter = 0;
-	public TransportMapping<?> transport= null;
-	public Snmp snmpHandler = null;
+	private TransportMapping<?> transport= null;
+	protected Snmp snmpHandler = null; 
 	
 	public SNMPManager() throws IOException {
 		this.transport= JSNMPUtil.createDefaultUDPTransport();
 		this.snmpHandler = new Snmp(this.transport);
 		this.snmpHandler.listen();
-		agentsMap = new HashMap<Integer, SNMPAgent>();
+		this.agentsMap = new HashMap<Integer, SNMPAgent>();
 	}
 	
 	public SNMPManager(TransportMapping<?> transport) throws IOException {
@@ -50,37 +52,41 @@ public class SNMPManager{
 	// ########################## PUBLIC METHODS ##########################
 	
 	// ···· GETTERS ····
-	public String getTransportMappingInfo() {
+	protected String getTransportMappingInfo() {
 		return this.transport.getListenAddress().toString();
 	}
+	
 	// ········ AGENT CONFIGURATION ·········
-	public synchronized void addAgent(String ip, int port, String name, String readCommunity) throws UnknownHostException {
-		SNMPAgent agent = new SNMPAgent(ip, port, name, readCommunity);
-		agent.setId(id_counter);
-		this.agentsMap.put(this.id_counter, agent);
-		id_counter++;
-	}
-	public synchronized void addAgent(SNMPAgent agent) {
-		agent.setId(id_counter);
-		this.agentsMap.put(this.id_counter, agent);
-		id_counter++;
+	
+	
+	/**
+	 * Adds a SNMPAgent to the Manager Agent List.
+	 * @param agent
+	 */
+	protected synchronized void addAgent(SNMPAgent agent) {
+		this.agentsMap.put(agent.getId(), agent);
 	}
 	
-	public void deleteAgent(int agent_id) {
-		this.agentsMap.remove(agent_id);
+	protected synchronized void addAllAgents(List<SNMPAgent> agents) {
+		this.agentsMap.putAll(agents.stream().collect(Collectors.toMap(SNMPAgent::getId, SNMPAgent::getMyself)));
 	}
 	
-	public synchronized void modifyAgent(int agent_id) {
+	protected boolean deleteAgent(int agent_id) {
+		return (agentsMap.remove(agent_id) != null ?  true : false);
+	}
+	
+	protected synchronized void modifyAgent(int agent_id) {
 		//TODO
 	}
 	
 	// ········ AGENTS HANDLING ·············
 	
+	
 	/**
 	 * Returns all the SNMPAgent instances available in Agent Map
 	 * @return
 	 */
-	public ArrayList<SNMPAgent> getAgents() {
+	protected ArrayList<SNMPAgent> getAgents() {
 		return new ArrayList<SNMPAgent>(agentsMap.values());
 	}
 	
@@ -89,16 +95,17 @@ public class SNMPManager{
 	 * @param agent_id
 	 * @return
 	 */
-	public SNMPAgent getAgent(int agent_id) {
+	protected SNMPAgent getAgent(int agent_id) {
 		return agentsMap.get(agent_id);
 	}
 	
 	
 	// ········ SENDING AND RECIEVING
-	public ResponseEvent<Address> sendSyncGET(String oid, int agent_id) {
+	protected ResponseEvent<Address> sendSyncGET(int agent_id, String...oid) {
 	
 		try {
 			ResponseEvent<Address> response = this.snmpHandler.send(JSNMPUtil.createPDU(oid), this.agentsMap.get(agent_id).getCommunityTarget());
+			
 			this.agentsMap.get(agent_id).insertData(response.getResponse());
 			return response;
 		} catch (IOException e) {

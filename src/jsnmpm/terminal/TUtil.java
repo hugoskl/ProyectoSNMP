@@ -30,8 +30,8 @@ public class TUtil {
 	public static final String[] MENU_OP_HEADERS = new String[] {"     - AGENT -     ","    - MONITOR -    ", "   - PROCESSES -   ", "     - OTHER -     "};
 	
 	public static final String[] MENU_OP_AGENTS =  new String[]{"(1) ADD AGENTS","(2) SHOW AGENTS","(3) CONFIG AGENT","(4) DEL AGENT"};
-	public static final String[] MENU_OP_MONITOR = new String[] {"(5) SEND (A)SYNC", "(6) SEND N SYNC", "(7) SEND BULK/NEXT", "(8) SEE TRAPS"};
-	public static final String[] MENU_OP_PROCESS = new String[]{"(9) NEW PROCESS", "(10) START PROCESS", "(11) SHOW PROCESSES", "(12) DEL PROCCESS"};
+	public static final String[] MENU_OP_MONITOR = new String[] {"(5) SEND SYNC", "(6) SEND N SYNC", "(7) SEND BULK/NEXT", "(8) SEE TRAPS"};
+	public static final String[] MENU_OP_PROCESS = new String[]{" (9) NEW PROCESS", "(10) START PROCESS", "(11) SHOW PROCESSES", "(12) DEL PROCCESS"};
 	public static final String[] MENU_OP_OTHERS =  new String[]{"(13) SNMP-MANAGER", "(14) JSNMP-SHELL", "(15) EXIT"};
 	
 	public static final Map<String, String[]> MENU_OPTIONS;
@@ -45,7 +45,7 @@ public class TUtil {
 	
 
 	
-	public static final String[] MANAGER_INFO = new String[] {"Manager Interfaces: ","Agents: ", "Running Processes: "};
+	public static final String[] MANAGER_INFO = new String[] {"Manager Interfaces: ","Agents: ", "Running Processes: ", "Traps: "};
 	
 	// #############################  U S E F U L L   M E T H O D S ################################
 

@@ -15,7 +15,7 @@ import jsnmpm.control.SNMPManager;
 public class CommandLine {
 	
 	//static BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-	static SNMPManager manager = new SNMPManager();
+	//static SNMPManager manager = new SNMPManager();
 	static boolean running = true;
 	
 	// ·································· TERMINAL COMMANDS ····································
