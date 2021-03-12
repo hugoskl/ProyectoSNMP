@@ -3,6 +3,7 @@ package jsnmpm.control;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.Flow.Processor;
 import java.util.concurrent.Flow.Subscriber;
@@ -76,6 +78,7 @@ public class SNMPController implements Processor<Whisper, Whisper>{
 	 */
 	public SNMPController(Subscriber<Whisper> monitor) throws FileNotFoundException, IOException{
 		this.ctrlFileHandler = new ControllerFileHandler();
+		
 		this.monitor = monitor;
 		this.ctrlInfo = new HashMap<INFO, String>();
 		this.init();
@@ -185,6 +188,7 @@ public class SNMPController implements Processor<Whisper, Whisper>{
 	 * @throws SQLException
 	 */
 	public void loadAgents() throws SQLException {
+		
 		this.snmpManager.addAllAgents(this.dbCtrl.getSNMPAgents());
 		this.agentIDCounter = this.snmpManager.getAgents().stream().mapToInt(SNMPAgent::getId).max().orElse(0);
 		++this.agentIDCounter;
